@@ -1,3 +1,4 @@
+import udf_cdp from './udf_cdp';
 import mainFunctions from './functions';
 import keywords from './keywords';
 import macros from './macros';
@@ -138,6 +139,7 @@ const signatures = {
   ...udf_timers,
   ...udf_visa,
   ...udf_winapi,
+  ...udf_cdp,
 };
 
 export default signatures;
