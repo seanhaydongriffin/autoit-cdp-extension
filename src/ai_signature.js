@@ -242,13 +242,86 @@ export default languages.registerSignatureHelpProvider(
       if (!caller.func) return null;
 
       const allSignatures = {
-        ...defaultSigs,
         ...getIncludedFunctionSignatures(document),
+        ...defaultSigs,
         ...getLocalFunctionSignatures(document),
       };
 
-      const matchedSignature = allSignatures[caller.func];
+      // CDP method → UDF mapping
+      const cdpMethodMap = {
+        // Browser
+        launch: '_CDP_Browser_Launch',
+        exists: '_CDP_Browser_Exists',
+        isRunning: '_CDP_Browser_IsRunning',
+        forceClose: '_CDP_Browser_ForceClose',
+        newPage: '_CDP_Browser_NewPage',
+        getNewPage: '_CDP_Browser_GetNewPage',
+        close: '_CDP_Browser_Close',
+
+         // Page
+        goto: '_CDP_Page_Goto',
+        locator: '_CDP_Page_Locator',
+
+        // Locator
+        click: '_CDP_Locator_Click',
+        hover: '_CDP_Locator_Hover',
+        fill: '_CDP_Locator_Fill',
+        scrollIntoView: '_CDP_Locator_ScrollIntoView',
+
+        textContent: '_CDP_Locator_TextContent',
+        innerText: '_CDP_Locator_InnerText',
+        innerTextCRStripped: '_CDP_Locator_InnerTextCRStripped',
+        innerTextLFStripped: '_CDP_Locator_InnerTextLFStripped',
+        innerTextReplace: '_CDP_Locator_InnerTextReplace',
+        innerHTML: '_CDP_Locator_InnerHTML',
+        inputValue: '_CDP_Locator_InputValue',
+        getAttribute: '_CDP_Locator_GetAttribute',
+        isVisible: '_CDP_Locator_IsVisible',
+        isHidden: '_CDP_Locator_IsHidden',
+        isEnabled: '_CDP_Locator_IsEnabled',
+        isDisabled: '_CDP_Locator_IsDisabled',
+        isEditable: '_CDP_Locator_IsEditable',
+        isChecked: '_CDP_Locator_IsChecked',
+
+        // Expect root
+        expect: '_CDP_Test_Step_Expect',
+
+        // Expect methods
+        toBeVisible: '_CDP_Expect_Locator_ToBeVisible',
+        toBeHidden: '_CDP_Expect_Locator_ToBeHidden',
+        toBeEnabled: '_CDP_Expect_Locator_ToBeEnabled',
+        toBeDisabled: '_CDP_Expect_Locator_ToBeDisabled',
+        toBeChecked: '_CDP_Expect_Locator_ToBeChecked',
+        toHaveText: '_CDP_Expect_Locator_ToHaveText',
+        toContainText: '_CDP_Expect_Locator_ToContainText',
+        toHaveAttribute: '_CDP_Expect_Locator_ToHaveAttribute',
+
+        toBe: '_CDP_Expect_Value_ToBe',
+        toBeGreaterThan: '_CDP_Expect_Value_ToBeGreaterThan',
+        toBeGreaterThanOrEqual: '_CDP_Expect_Value_ToBeGreaterThanOrEqual',
+        toBeLessThan: '_CDP_Expect_Value_ToBeLessThan',
+        toBeLessThanOrEqual: '_CDP_Expect_Value_ToBeLessThanOrEqual',
+        toBeCloseTo: '_CDP_Expect_Value_ToBeCloseTo',
+        toContain: '_CDP_Expect_Value_ToContain',
+        toMatch: '_CDP_Expect_Value_ToMatch',
+        toBeTruthy: '_CDP_Expect_Value_ToBeTruthy',
+        toBeFalsy: '_CDP_Expect_Value_ToBeFalsy',
+        toBeNull: '_CDP_Expect_Value_ToBeNull',
+        toBeDefined: '_CDP_Expect_Value_ToBeDefined',
+        toBeUndefined: '_CDP_Expect_Value_ToBeUndefined',
+        toHaveLength: '_CDP_Expect_Value_ToHaveLength',
+
+      };
+
+      // Rewrite method names to UDF names
+      let funcName = caller.func;
+      if (cdpMethodMap[funcName]) {
+        funcName = cdpMethodMap[funcName];
+      }
+
+      const matchedSignature = allSignatures[funcName];
       if (!matchedSignature) return null;
+
 
       const result = new SignatureHelp();
       result.signatures = [createSignatureInfo(matchedSignature)];

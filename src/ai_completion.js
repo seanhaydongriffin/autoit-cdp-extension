@@ -321,6 +321,61 @@ const getMapKeyCompletions = async (document, position, mapName) => {
 };
 
 const provideCompletionItems = async (document, position) => {
+
+const line2 = document.lineAt(position).text;
+const prefix2 = line2.substring(0, position.character);
+
+// CDP Browser object completions — ONLY for the literal variable "$browser"
+if (/\$browser\.$/i.test(prefix2)) {
+    return completions.filter(item => item.type === 'cdp_browser');
+}
+
+// CDP Browser chaining: $browser.launch("x"). → treat as Browser object
+if (/^\s*\$browser[\s\S]*\.\s*$/.test(prefix2)) {
+    return completions.filter(item => item.type === 'cdp_browser');
+}
+
+// CDP Chrome-instance object completions — any variable containing "chrome"
+if (/\$\w*chrome\w*\.$/i.test(prefix2)) {
+    return completions.filter(item => item.type === 'cdp_chrome');
+}
+
+// CDP Chrome-instance chaining: $chrome.newPage(). → treat as Chrome object
+if (/\$\w*chrome\w*[\s\S]*\.\s*$/i.test(prefix2)) {
+    return completions.filter(item => item.type === 'cdp_chrome');
+}
+
+// CDP Locator object completions — any variable containing "page" followed by .locator()
+if (/\$\w*page\w*.*\.locator\(.*\)\.$/i.test(prefix2)) {
+    return completions.filter(item => item.type === 'cdp_locator');
+}
+
+// CDP Locator chaining: $page.locator("x").scrollIntoView().click()
+if (/\$\w*page\w*.*\.locator\(.*\).*?\.\s*$/i.test(prefix2)) {
+    return completions.filter(item => item.type === 'cdp_locator');
+}
+
+// CDP Expect object completions — after .expect(...)
+if (/\.expect\s*\(.*\)\.\s*$/i.test(prefix2)) {
+    return completions.filter(item => item.type === 'cdp_expect');
+}
+
+// CDP Page object completions — any variable containing "page"
+if (/\$\w*page\w*\.$/i.test(prefix2)) {
+    return completions.filter(item => item.type === 'cdp_page');
+}
+
+// CDP Page chaining — any variable containing "page"
+if (/\$\w*page\w*[\s\S]*\.\s*$/i.test(prefix2)) {
+    return completions.filter(item => item.type === 'cdp_page');
+}
+
+// If inside With teststep(...) and user types ".e" or ".ex" or ".expect"
+if (insideTeststepBlock(document, position) && /\.\w*$/i.test(prefix2)) {
+    return completions.filter(item => item.type === 'cdp_expect_root');
+}
+
+
   // Gather the functions created by the user
 
   const text = document.getText();
@@ -417,4 +472,17 @@ const completionFeature = languages.registerCompletionItemProvider(
   '#',
 );
 
+
+
 export default completionFeature;
+
+
+// Detect if we are inside a With teststep(...) block
+function insideTeststepBlock(document, position) {
+    for (let i = position.line; i >= 0; i--) {
+        const line = document.lineAt(i).text;
+        if (/^\s*EndWith/i.test(line)) return false;
+        if (/^\s*With\s+teststep\s*\(/i.test(line)) return true;
+    }
+    return false;
+}
